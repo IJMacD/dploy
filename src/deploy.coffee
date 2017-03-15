@@ -112,7 +112,7 @@ module.exports = class Deploy
 
 		# Set the revision path
 		@revisionPath = if @config.path.local then @config.path.local + @config.revision else @config.revision
-		
+
 		@
 
 	###
@@ -133,7 +133,7 @@ module.exports = class Deploy
 				@config.publicKey = fs.readFileSync @_resolveHomeFolder(@config.publicKey)
 
 			return callback.call(this)
-		
+
 		# If no password, privateKey or publicKey is found, prompt the user to enter the password
 		prompt.get [
 			name: "password"
@@ -216,7 +216,7 @@ module.exports = class Deploy
 	###
 	checkRevision: ->
 		console.log "Checking revisions...".bold.yellow
-		
+
 		# Retrieve the revision file from the server so we can compare to our local one
 		remotePath = @_normalize(@config.path.remote + @config.revision)
 		@connection.get remotePath, (error, data) =>
@@ -291,7 +291,7 @@ module.exports = class Deploy
 
 			# Add the revision file
 			@toUpload.push name:@revisionPath, remote:@config.revision
-			
+
 			if @config.check then @askBeforeUpload() else @startUploads()
 			return
 
@@ -304,7 +304,7 @@ module.exports = class Deploy
 		# Call git to get the tree list of all our tracked files
 		exec "git ls-tree -r --name-only HEAD", { maxBuffer: 5000*1024 }, (error, stdout, stderr) =>
 			return console.log "An error occurred when retrieving 'git ls-tree -r --name-only HEAD'".bold.red, error if error
-			
+
 			unless @catchup
 				# Split the lines to get individual files
 				files = stdout.split "\n"
@@ -319,10 +319,10 @@ module.exports = class Deploy
 
 			# Add the revision file
 			@toUpload.push name:@revisionPath, remote:@config.revision
-			
+
 			if @config.check then @askBeforeUpload() else @startUploads()
 			return
-			
+
 
 	###
 	Include extra files from the config file
@@ -341,7 +341,7 @@ module.exports = class Deploy
 				remoteFile = @config.include[key] + remoteFile
 				remoteFile = remoteFile.replace(/(\/\/)/g, "/")
 
-				@toUpload.push name:file, remote:remoteFile
+				@toUpload.push name:file, remote:remoteFile if @canUpload file
 		yes
 
 
@@ -354,12 +354,6 @@ module.exports = class Deploy
 	canUpload: (name) =>
 		# Return false if the name is empty
 		return no if name.length <= 0
-
-		# Check if your are settings the local path
-		if @config.path.local
-			# Check if the name of the file matchs with the local path
-			# And also ignore where the revision file is
-			return no if name.indexOf(@config.path.local) < 0
 
 		for exclude in @config.exclude
 			return no if minimatch(name, exclude, { dot: true })
@@ -385,7 +379,7 @@ module.exports = class Deploy
 			else
 				return no
 		yes
-	
+
 	###
 	Get the user's confirmation before uploading the file
 	###
@@ -441,7 +435,7 @@ module.exports = class Deploy
 
 	###
 	Upload or delete the next file in the queue
-	
+
 	@param	connection 				The FTP/SFTP connection to use
 	###
 	nextOnQueue: (connection) ->
@@ -500,7 +494,7 @@ module.exports = class Deploy
 						# console.log "[ + ]".green, "Directory created: #{folder}:".green unless @dirCreated[folder]
 						# Set the folder as created
 						@setFolderAsCreated folder
-				
+
 				if error
 					item.started = false
 					@nextOnQueue connection
@@ -514,7 +508,7 @@ module.exports = class Deploy
 
 	###
 	Upload the file to the remote directory
-	
+
 	@param	connection 				The FTP/SFTP connection to use
 	@param 	item 					The item to upload
 	###
@@ -558,7 +552,7 @@ module.exports = class Deploy
 
 			# Keep uploading the rest
 			@nextOnQueue connection
-	
+
 	###
 	When we are creating the folders in the remote server we got make sure
 	we don't try to rec-reate they, otherwise expect chaos
